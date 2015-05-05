@@ -6,6 +6,13 @@
 using namespace ofxCv;
 using namespace cv;
 
+class responseData{
+public:
+    int x;
+    int y;
+    float r;
+    
+};
 class ofApp : public ofBaseApp{
 
 	public:
@@ -32,6 +39,9 @@ class ofApp : public ofBaseApp{
     
         void computeRMatrix();
         void createVisuals();
+        void extractResponses();
+        void sortResponses();
+    
         ofImage computeSumMatrix( ofImage image);
     
     
@@ -54,17 +64,17 @@ class ofApp : public ofBaseApp{
     ofImage visualizingImage;
     
     ofxCvGrayscaleImage checkerBoardinCV;
-    
     //Mat checkerBoardinCV;
     
     int cWidth;
     int cHeight;
-    
-    
-    
+    //int listLength = 100;
+    int responseArray[3][100] ;
     int windowSize = 5 ;
-    int k = 0.04;
+    float k = 0.04f;
     int tau = 10000;
+    
+    vector<responseData> extractedResponses;
     
     
 		

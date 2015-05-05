@@ -5,10 +5,11 @@ void ofApp::setup(){
     
     
     checkerBoard.loadImage("checkerboard.png");
-    //checkerBoard.resize(400, 400);
+    //checkerBoard.resize(60, 60);
+    //checkerBoard.loadImage("notredame.png");
+    
     cHeight =  checkerBoard.height;
     cWidth  =  checkerBoard.width;
-    
     
     dxImage.allocate(cHeight, cWidth, OF_IMAGE_GRAYSCALE);
     dyImage.allocate(cHeight, cWidth, OF_IMAGE_GRAYSCALE);
@@ -28,6 +29,7 @@ void ofApp::setup(){
     //checkerBoardinCV.allocate ( cWidth , cHeight);
     checkerBoardinCV.setFromPixels(checkerBoard.getPixelsRef());
     checkerBoardinCV.blurGaussian();
+    //checkerBoardinCV.blur();
     checkerBoard.setFromPixels(checkerBoardinCV.getPixelsRef());
     
     deriveAlongX();
@@ -48,10 +50,12 @@ void ofApp::setup(){
     cout<< "created sum matrices"<<endl ;
 
     computeRMatrix();
-    createVisuals();
+    
     cout<< "created response"<<endl ;
 
-        
+    createVisuals();
+    cout<< "created visuals"<<endl ;
+
     
     
     
@@ -72,9 +76,13 @@ void ofApp::draw(){
     
     checkerBoardinCV.draw(0, 0, cWidth  , cHeight);
     checkerBoard.draw(cWidth , 0, cWidth  , cHeight);
-    //dx2Image.draw(cWidth,cHeight, cWidth , cHeight);
+    dxImage.draw( 2 * cWidth,0, cWidth , cHeight);
     
-    visualizingImage.draw(0,cHeight, cWidth , cHeight);
+    dyImage.draw(0,cHeight, cWidth , cHeight);
+    dxyImage.draw(cWidth,cHeight, cWidth , cHeight);
+
+    
+    responseImage.draw(2* cWidth ,cHeight, cWidth , cHeight);
 
     
     
@@ -96,10 +104,7 @@ void ofApp::deriveAlongX()
             int nextPixel    = checkerBoard.getPixelsRef()[i*cWidth+ (j+1)];
             
             int difference = currentPixel - nextPixel;
-            
-            if(difference < 0)
-                difference = -difference;
-            
+ 
             dxImage.getPixelsRef()[i*cWidth+ j] =  difference;
             
         
@@ -125,9 +130,7 @@ void ofApp::deriveALongY()
             int nextPixel    = checkerBoard.getPixelsRef()[(i+1)*cWidth+ j];
             
             int difference = currentPixel - nextPixel;
-            
-            if(difference < 0)
-                difference = -difference;
+
             
             dyImage.getPixelsRef()[i*cWidth+ j] =  difference;
             
@@ -156,12 +159,12 @@ void ofApp::squareTheXImage()
             pixelValue = pixelValue*pixelValue;
             
             dx2Image.getPixelsRef()[i*cWidth+ j] = pixelValue;
-            //cout<< pixelValue;
+            //cout<< pixelValue <<" ";
             
 
             
         }
-        //cout<< endl;
+        cout<< endl;
         
     }
     
@@ -183,9 +186,11 @@ void ofApp::squareTheYImage()
             
             int pixelValue = dyImage.getPixelsRef()[i*cWidth+ j]  ;
             pixelValue = pixelValue*pixelValue;
-            
+            //cout<< pixelValue <<" ";
             dy2Image.getPixelsRef()[i*cWidth+ j] = pixelValue;
         }
+        cout<< endl;
+
     }
     
     dy2Image.update();
@@ -210,7 +215,7 @@ void ofApp::multiplyXY()
             dxyImage.getPixelsRef()[i*cWidth+ j] = pixelValueXY;
             //cout<< pixelValueXY <<" ";
         }
-        //cout << endl;
+        cout << endl;
     }
     
     dxyImage.update();
@@ -238,9 +243,9 @@ ofImage ofApp::computeSumMatrix( ofImage image)
             }
             
             intermediateImage.getPixelsRef()[i*cWidth+j] = tempSum;
-          //  cout<< tempSum <<" ";
+            //cout<< tempSum <<" ";
         }
-        //cout<<endl;
+        cout<<endl;
         
     }
     cout<<"created"<<endl;
@@ -261,20 +266,35 @@ void ofApp::computeRMatrix()
         for ( int j = 0; j< cWidth - windowSize -1 ; j++)
         {
         
-            int determinant = ( dx2SumMatrix.getPixelsRef()[i*cWidth+j] *  dy2SumMatrix.getPixelsRef()[i*cWidth+j] ) - (dxySumMatrix.getPixelsRef()[i*cWidth+j] * dxySumMatrix.getPixelsRef()[i*cWidth+j] );
+            float determinant = ( dx2SumMatrix.getPixelsRef()[i*cWidth+j] *  dy2SumMatrix.getPixelsRef()[i*cWidth+j] ) - (dxySumMatrix.getPixelsRef()[i*cWidth+j] * dxySumMatrix.getPixelsRef()[i*cWidth+j] );
             
             
-            int trace = dx2SumMatrix.getPixelsRef()[i*cWidth+j] *  dy2SumMatrix.getPixelsRef()[i*cWidth+j] ;
+            float traceX = dx2SumMatrix.getPixelsRef()[i*cWidth+j] ;
+            float traceY = dy2SumMatrix.getPixelsRef()[i*cWidth+j] ;
+
+            float response = determinant - k * (traceX + traceY ) * (traceX + traceY )  ;
             
+            //if ( response> 5000)
+                //cout<< response << " ";
             
-            int response = determinant - k * (trace + trace) ;
+            if ( response > tau )
+                {
+                responseData rData;
+                rData.x = j;
+                rData.y = i;
+                rData.r = response;
+                cout<< rData.x << " "<< rData.y <<" "<< rData.r   <<endl;
+                
+                //cout<<"exceeds 10000" ;
+                extractedResponses.push_back(rData);
+                }
             
+
             responseImage.getPixelsRef()[ i*cWidth+j ] = response;
-            cout<<response << " ";
             
             
         }
-        cout<<endl;
+        //cout<<endl;
         
     }
     cout<<"computing R"<<endl;
@@ -291,13 +311,23 @@ void ofApp::createVisuals()
         for ( int j = 0; j< cWidth - windowSize -1 ; j++)
         {
             
-            if ( dx2SumMatrix.getPixelsRef()[i*cWidth+j] > tau)
+            //cout<< int (responseImage.getPixelsRef()[i*cWidth+j])  <<" ";
+            
+            if ( responseImage.getPixelsRef()[i*cWidth+j] > tau)
             {
+
                 visualizingImage.getPixelsRef()[i*cWidth+j] =255;
                 
+             
             }
             else
+            {
                  visualizingImage.getPixelsRef()[i*cWidth+j] =0;
+                 //cout<<"1 00 ";
+            
+            }
+            
+            
             
             
         }
