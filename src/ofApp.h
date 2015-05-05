@@ -42,6 +42,10 @@ class ofApp : public ofBaseApp{
         void extractResponses();
         void sortResponses();
     
+        void displayResponses();
+    
+        static bool my_compare(  const responseData &a , const responseData &b);
+    
         ofImage computeSumMatrix( ofImage image);
     
     

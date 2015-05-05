@@ -53,9 +53,13 @@ void ofApp::setup(){
     
     cout<< "created response"<<endl ;
 
-    createVisuals();
-    cout<< "created visuals"<<endl ;
+    //createVisuals();
+    //cout<< "created visuals, currently buggy"<<endl ;
 
+    
+    sortResponses();
+    displayResponses();
+    
     
     
     
@@ -74,8 +78,9 @@ void ofApp::draw(){
     
     ofBackground(128);
     
+    
     checkerBoardinCV.draw(0, 0, cWidth  , cHeight);
-    checkerBoard.draw(cWidth , 0, cWidth  , cHeight);
+       checkerBoard.draw(cWidth , 0, cWidth  , cHeight);
     dxImage.draw( 2 * cWidth,0, cWidth , cHeight);
     
     dyImage.draw(0,cHeight, cWidth , cHeight);
@@ -84,10 +89,29 @@ void ofApp::draw(){
     
     responseImage.draw(2* cWidth ,cHeight, cWidth , cHeight);
 
+    ofSetColor(0, 100, 180);
+    ofDrawBitmapString("original checkerBoard:", 20, 20);
+    ofDrawBitmapString("blurred checkerBoard:", 20+ cWidth, 20 );
+    ofDrawBitmapString("dxImage:", 20+ cWidth *2, 20 );
+    
+    ofDrawBitmapString("dyImage:", 20, 20 + cHeight );
+    ofDrawBitmapString("dxyImage:", 20 + cWidth, 20 + cHeight );
+    ofDrawBitmapString("responseImage:", 20 + 2* cWidth, 20 + cHeight );
     
     
+    for ( int i = 0 ; i< 100 ; i++)
+    {
+        if ( extractedResponses[i].r > tau )
+        {
+            
+            ofNoFill();
+            ofCircle( 2* cWidth + extractedResponses[i].x , cHeight + extractedResponses[i].y , 15 );
+        }
+        
+    }
     
     
+    ofSetColor(255);
 }
 
 //--------------------------------------------------------------
@@ -277,21 +301,24 @@ void ofApp::computeRMatrix()
             //if ( response> 5000)
                 //cout<< response << " ";
             
-            if ( response > tau )
+            //if ( response > tau )
                 {
                 responseData rData;
                 rData.x = j;
                 rData.y = i;
                 rData.r = response;
-                cout<< rData.x << " "<< rData.y <<" "<< rData.r   <<endl;
+                //cout<< rData.x << " "<< rData.y <<" "<< rData.r   <<endl;
                 
                 //cout<<"exceeds 10000" ;
                 extractedResponses.push_back(rData);
                 }
-            
+            // put all data into the vector
+            if ( response > tau )
+                responseImage.getPixelsRef()[ i*cWidth+j ] = 255;
+            else
+                responseImage.getPixelsRef()[ i*cWidth+j ] = 0;
 
-            responseImage.getPixelsRef()[ i*cWidth+j ] = response;
-            
+            // not correct BW image
             
         }
         //cout<<endl;
@@ -336,6 +363,35 @@ void ofApp::createVisuals()
 }
 
 
+
+void ofApp::sortResponses()
+{
+    
+    //std::sort( extractedResponses.begin(), extractedResponses.end(), my_compare);
+    ofSort(extractedResponses , my_compare);
+    
+    
+}
+
+bool ofApp::my_compare( const responseData &a ,const responseData &b){
+    return a.r  > b.r ;
+}
+
+
+void ofApp::displayResponses()
+{
+    cout<< extractedResponses.size()<<endl;
+    //cout<<extractedResponses[extractedResponses.size() -1 ].r <<endl ;
+    //cout<<extractedResponses[0].r<< endl ;
+    
+    for ( int i = 0 ; i< 100 ; i++)
+    {
+        cout<<extractedResponses[i].x<< "  " <<extractedResponses[i].y << " "<< extractedResponses[i].r <<endl;
+        
+    }
+        
+    
+}
 
 
 //--------------------------------------------------------------
